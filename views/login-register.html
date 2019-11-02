@@ -1,0 +1,52 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../public/login-register-style.css" />
+    <title>Login</title>
+  </head>
+  <body>
+    <div class="container">
+      <div class="register">
+        <h3 class="title">Đăng Ký</h3>
+        <form action="/authentication/register" method="post">
+          <div class="username">
+            <label for="username"></label>
+            <input name="username" type="text" placeholder="Tên Đăng Nhập" />
+          </div>
+          <div class="password">
+            <label for="password"></label>
+            <input name="password" type="password" placeholder="Mật Khẩu" />
+          </div>
+          <div class="confirmPassword">
+            <label for="confirmPassword"></label>
+            <input
+              name="confirmPassword"
+              type="password"
+              placeholder="Xác Nhận Mật Khẩu"
+            />
+          </div>
+          <input type="submit" value="Đăng Kí" />
+          <span class="register-error"></span>
+        </form>
+      </div>
+      <div class="login">
+        <h3 class="title">Đăng Nhập</h3>
+        <form action="/authentication/login" method="post">
+          <div class="username">
+            <label for="username"></label>
+            <input name="username" type="text" placeholder="Tên Đăng Nhập" />
+          </div>
+          <div class="password">
+            <label for="password"></label>
+            <input name="password" type="password" placeholder="Mật Khẩu" />
+          </div>
+          <input type="submit" value="Đăng Nhập" />
+          <span class="login-error"></span>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>

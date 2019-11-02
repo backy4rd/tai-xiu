@@ -1,0 +1,68 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <script
+      src="https://code.jquery.com/jquery-3.4.1.min.js"
+      integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+      crossorigin="anonymous"
+    ></script>
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans&display=swap" rel="stylesheet">
+    <title>Document</title>
+    <style>
+      * {
+        font-family: 'Open Sans', sans-serif;
+      }
+      .shuffle {
+        margin: 0 auto;
+        height: 100px;
+        width: 300px;
+        line-height: 100px;
+        padding-bottom: 100px;
+      }
+      .shuffle span {
+        padding: 35px;
+        font-size: 40px;
+      }
+      .choose button {
+        margin: 0 210px;
+        padding: 70px;
+        font-size: 50px;
+      }
+      .choose span {
+        line-height: 190px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shuffle">
+      <span>1</span>
+      <span>2</span>
+      <span>3</span>
+    </div>
+    <div class="choose">
+      <button class="tai">Tài</button>
+      <span class="you-choose">Xỉu</span>
+      <button class="xiu">Xỉu</button>
+    </div>
+    <script>
+      function shuffle() {
+        return new Promise((resolve, reject) => {
+          const interval = setInterval(() => {
+            [...$(".shuffle span")].forEach(item => {
+              item.innerHTML = Math.floor(Math.random() * 6) + 1;
+            });
+          }, 100);
+
+          setTimeout(() => {
+            clearInterval(interval);
+            const res = [...$(".shuffle span")].map(item => parseInt(item.innerHTML)).reduce((a, b) => a + b);
+            resolve(res)
+          }, 4000);
+        });
+      }
+      shuffle().then(res => {
+        console.log(res);
+      })
+    </script>
+  </body>
+</html>
