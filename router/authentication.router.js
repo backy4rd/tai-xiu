@@ -18,7 +18,7 @@ router.post(
     db.insert({ username, hashPassword, coin: 20 }, (err, res) => {
       if (err) throw err;
       response.cookie("token", res._id, {
-        maxAge: 3600 * 1000,
+        maxAge: 3 * 3600 * 1000,
         signed: true
       });
       response.redirect("/");
@@ -28,7 +28,7 @@ router.post(
 
 router.post("/login", validateMiddleware.validateLogin, (request, response) => {
   response.cookie("token", request.id, {
-    maxAge: 3600 * 1000,
+    maxAge: 3 * 3600 * 1000,
     signed: true
   });
   response.redirect("/");

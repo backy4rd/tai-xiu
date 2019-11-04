@@ -14,7 +14,7 @@ const urlDecode = require("urldecode");
 const gameFunction = require("./gameFunction");
 
 const authenticationRouter = require("./router/authentication.router");
-const viewsRouter = require("./router/viewsRouter.router");
+const viewsRouter = require("./router/views.router");
 
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
@@ -24,70 +24,66 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser(secret));
 
+const db = new Datastore("./database/account-storage");
 let betUsers = [];
 
 app.use("/authentication", authenticationRouter);
 app.use("/", viewsRouter);
 
-setInterval(() => {
-  const db = new Datastore("./database/account-storage");
-  db.loadDatabase();
+setInterval(() => { 
   const _3dice = gameFunction.roll();
   const point = _3dice[0] + _3dice[1] + _3dice[2];
   //io.emit("roll", _3dice);
   console.log(betUsers);
-  betUsers.forEach(betUser => {
-    const _id = betUser._id;
+
+  betUsers.forEach(({ _id, betInfo: { option, bet } }) => {
+    db.loadDatabase();
     db.find({ _id }, (err, [{ coin }]) => {
       if (err) throw err;
-      if (gameFunction.isWin(betUser.betInfo.option, point)) {
-        coin += betUser.betInfo.bet;
-        console.log('you win: ' + coin);
+      if (gameFunction.isWin(option, point)) {
+        coin += bet;
       } else {
-        coin -= betUser.betInfo.bet;
-        console.log('you lose: ' + coin);
+        coin -= bet;
       }
       if (coin === 0) coin = 2;
-      db.update({ _id }, { $set: { coin }});
-    })
-  })
+      db.update({ _id }, { $set: { coin } });
+    });
+  });
+
   betUsers = [];
 }, 20 * 1000);
 
 io.on("connection", socket => {
-  const db = new Datastore("./database/account-storage");
-db.loadDatabase();
+  //fix signedCookie that was encoded by url encoder 
   const token = urlDecode(
     socket.handshake.headers.cookie.match(/(?<=token=).+?(?=(;|$))/)[0]
-  );
+    );
   const _id = cookieParser.signedCookie(token, secret);
   console.log(_id);
-
+  
   //handle bet
   socket.on("bet", betInfo => {
     if ((!betInfo.option || !betInfo.bet) && betInfo.bet !== 0) return;
-    db.find({_id}, (err, [userInfo]) => {
+    if (betInfo.bet < 0) {
+      socket.emit("err", "invalid bet monney");
+      return;
+    }
+    db.loadDatabase();
+    db.find({ _id }, (err, [ userInfo ]) => {
       if (err) throw err;
+      if (!userInfo) return;
       if (betInfo.bet > userInfo.coin) {
         socket.emit("err", "not enough monney");
         return;
       }
-      if (betInfo.bet < 0) {
-        socket.emit('err', "invalid bet monney");
-        return;
-      }
       //handle change bet
       for (let i = 0; i < betUsers.length; i++) {
-        const betUser = betUsers[i];
-        if (betUser._id === _id) {
-          betUser.betInfo = betInfo;
-          // console.log(betUsers);
+        if (betUsers[i]._id === _id) {
+          betUsers[i].betInfo = betInfo;
           return;
         }
       }
-      
       betUsers.push({ _id, betInfo });
-      // console.log(betUsers);
-    })
+    });
   });
 });
