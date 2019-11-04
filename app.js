@@ -24,14 +24,14 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser(secret));
 
-const db = new Datastore("./database/account-storage");
-db.loadDatabase();
 let betUsers = [];
 
 app.use("/authentication", authenticationRouter);
 app.use("/", viewsRouter);
 
 setInterval(() => {
+  const db = new Datastore("./database/account-storage");
+  db.loadDatabase();
   const _3dice = gameFunction.roll();
   const point = _3dice[0] + _3dice[1] + _3dice[2];
   //io.emit("roll", _3dice);
@@ -55,6 +55,8 @@ setInterval(() => {
 }, 20 * 1000);
 
 io.on("connection", socket => {
+  const db = new Datastore("./database/account-storage");
+db.loadDatabase();
   const token = urlDecode(
     socket.handshake.headers.cookie.match(/(?<=token=).+?(?=(;|$))/)[0]
   );
