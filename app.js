@@ -1,10 +1,9 @@
+require('dotenv').config();
 const express = require("express");
 const app = express();
-const PORT = 5000;
-const secret = "285xKOPfNhBBjfoD";
-const server = app.listen(PORT, (err, res) => {
+const server = app.listen(process.env.PORT, (err, res) => {
   if (err) throw err;
-  console.log("server listening port: " + PORT);
+  console.log("server listening port: " + process.env.PORT);
 });
 
 const io = require("socket.io")(server);
@@ -12,6 +11,7 @@ const Datastore = require("nedb");
 const urlDecode = require("urldecode");
 
 const gameFunction = require("./gameFunction");
+const tool = require('./tool');
 
 const authenticationRouter = require("./router/authentication.router");
 const viewsRouter = require("./router/views.router");
@@ -22,7 +22,7 @@ const cookieParser = require("cookie-parser");
 app.use("/public", express.static("public"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cookieParser(secret));
+app.use(cookieParser(process.env.COOKIE_SECRET));
 
 const db = new Datastore("./database/account-storage");
 let betUsers = [];
@@ -54,11 +54,10 @@ setInterval(() => {
 }, 20 * 1000);
 
 io.on("connection", socket => {
-  //fix signedCookie that was encoded by url encoder 
-  const token = urlDecode(
-    socket.handshake.headers.cookie.match(/(?<=token=).+?(?=(;|$))/)[0]
-    );
-  const _id = cookieParser.signedCookie(token, secret);
+  //fix signedCookie that was encoded by url encoder
+  const cookie = tool.strToObjCookie(socket.handshake.headers.cookie);
+  const token = urlDecode(cookie.token);
+  const _id = cookieParser.signedCookie(token, process.env.COOKIE_SECRET);
   console.log(_id);
   
   //handle bet
