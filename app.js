@@ -30,23 +30,43 @@ let betUsers = [];
 app.use("/authentication", authenticationRouter);
 app.use("/", viewsRouter);
 
-setInterval(() => { 
+setInterval(async () => { 
+  for (let i = 15; i >= 0; i--) {
+    await tool.waitASecond(() => {
+      console.log(i);
+      io.emit('countDown', i);
+    })
+  }
+
   const _3dice = gameFunction.roll();
   const point = _3dice[0] + _3dice[1] + _3dice[2];
-  //io.emit("roll", _3dice);
-  console.log(betUsers);
+  await tool.waitASecond(() => {
+    io.emit("roll", _3dice);
+  })
 
-  betUsers.forEach(({ _id, betInfo: { option, bet } }) => {
-    db.loadDatabase();
+  db.loadDatabase();
+  betUsers.forEach(({ socketId, _id, betInfo: { option, bet } }) => {
+    console.log(Date.now());
     db.find({ _id }, (err, [{ coin }]) => {
       if (err) throw err;
       if (gameFunction.isWin(option, point)) {
-        coin += bet;
+        coin += bet * gameFunction.xBase(option);
+        io.to(socketId).emit('result', {
+          status: 'you win',
+          coin: `+${bet * gameFunction.xBase(option)} coin`
+        });
       } else {
         coin -= bet;
+        io.to(socketId).emit('result', {
+          status: 'you lose',
+          coin: `-${bet} coin`
+        });
       }
       if (coin === 0) coin = 2;
-      db.update({ _id }, { $set: { coin } });
+      io.to(socketId).emit('currentCoin', coin);
+      db.update({ _id }, { $set: { coin } }, err => {
+        if (err) throw err;
+      });
     });
   });
 
@@ -58,12 +78,24 @@ io.on("connection", socket => {
   const cookie = tool.strToObjCookie(socket.handshake.headers.cookie);
   const token = urlDecode(cookie.token);
   const _id = cookieParser.signedCookie(token, process.env.COOKIE_SECRET);
-  console.log(_id);
+  const socketId = socket.id;
+  console.log(socketId, _id);
+
+  //show username and coin to client
+  db.loadDatabase();
+  db.find({ _id }, (err, [ userInfo ]) => {
+    if (err) throw err;
+    if (!userInfo) return;
+    const { username, coin } = userInfo;
+    socket.emit('yourInfo', { username, coin });
+  });
   
   //handle bet
   socket.on("bet", betInfo => {
-    if ((!betInfo.option || !betInfo.bet) && betInfo.bet !== 0) return;
-    if (betInfo.bet < 0) {
+    const { option, bet } = betInfo;
+    if ((!option || !bet) && bet !== 0) return;
+    if (!gameFunction.isOptionValid(option)) return;
+    if (bet < 0) {
       socket.emit("err", "invalid bet monney");
       return;
     }
@@ -71,7 +103,7 @@ io.on("connection", socket => {
     db.find({ _id }, (err, [ userInfo ]) => {
       if (err) throw err;
       if (!userInfo) return;
-      if (betInfo.bet > userInfo.coin) {
+      if (bet > userInfo.coin) {
         socket.emit("err", "not enough monney");
         return;
       }
@@ -79,10 +111,12 @@ io.on("connection", socket => {
       for (let i = 0; i < betUsers.length; i++) {
         if (betUsers[i]._id === _id) {
           betUsers[i].betInfo = betInfo;
+          console.log(betUsers);
           return;
         }
       }
-      betUsers.push({ _id, betInfo });
+      betUsers.push({ socketId, _id, betInfo });
+      console.log(betUsers);
     });
   });
 });

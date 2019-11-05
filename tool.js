@@ -8,3 +8,10 @@ module.exports.strToObjCookie = strCookie => {
     }
   }, {});
 };
+
+module.exports.waitASecond = (callback) => {
+  return new Promise((resolve, reject) => {
+    callback();
+    setTimeout(() => resolve(), 1000);
+  })
+}
