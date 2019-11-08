@@ -1,70 +1,89 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <script
-      src="https://code.jquery.com/jquery-3.4.1.min.js"
-      integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
-      crossorigin="anonymous"
-    ></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link
+      href="https://fonts.googleapis.com/css?family=Open+Sans&display=swap"
+      rel="stylesheet"
+    />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
-    <link href="https://fonts.googleapis.com/css?family=Open+Sans&display=swap" rel="stylesheet">
-    <title>Document</title>
     <style>
       * {
-        font-family: 'Open Sans', sans-serif;
+        font-family: "Open Sans", sans-serif;
       }
-      .shuffle {
-        margin: 0 auto;
-        height: 100px;
-        width: 300px;
-        line-height: 100px;
-        padding-bottom: 100px;
+      body {
+        margin: 0;
       }
-      .shuffle span {
-        padding: 35px;
-        font-size: 40px;
+      .status {
+        width: 30%;
+        height: 300px;
+        float: left;
       }
-      .choose button {
-        margin: 0 210px;
-        padding: 60px;
-        font-size: 50px;
+
+      .game-field {
+        width: 70%;
+        float: right;
       }
-      .choose span {
-        line-height: 190px;
+      p {
+        font-size: 30px;
+        margin: 20px 0 50px 0;
+        text-align: center;
       }
     </style>
+    <title>tai-xiu</title>
   </head>
   <body>
-    <div class="shuffle">
-      <span>1</span>
-      <span>2</span>
-      <span>3</span>
+    <div class="status">
+      <ul></ul>
     </div>
-    <div class="choose">
-      <button class="tai">Tài</button>
-      <span class="you-choose">Xỉu</span>
-      <button class="xiu">Xỉu</button>
+    <div class="game-field">
+      <div class="info">
+        <div class="username"></div>
+        <div class="coin"></div>
+      </div>
+      <p class="dice"></p>
+      <form onsubmit="return false">
+        <input id="tai" type="radio" name="option" />
+        <label for="tai">tài</label>
+        <input id="xiu" type="radio" name="option" />
+        <label for="xiu">xỉu</label>
+        <br />
+        <input id="_4" type="radio" name="option" />
+        <label for="_4">4</label>
+        <input id="_5" type="radio" name="option" />
+        <label for="_5">5</label>
+        <input id="_6" type="radio" name="option" />
+        <label for="_6">6</label>
+        <input id="_7" type="radio" name="option" />
+        <label for="_7">7</label>
+        <input id="_8" type="radio" name="option" />
+        <label for="_8">8</label>
+        <input id="_9" type="radio" name="option" />
+        <label for="_9">9</label>
+        <input id="_10" type="radio" name="option" />
+        <label for="_10">10</label>
+        <input id="_11" type="radio" name="option" />
+        <label for="_11">11</label>
+        <input id="_12" type="radio" name="option" />
+        <label for="_12">12</label>
+        <input id="_13" type="radio" name="option" />
+        <label for="_13">13</label>
+        <input id="_14" type="radio" name="option" />
+        <label for="_14">14</label>
+        <input id="_15" type="radio" name="option" />
+        <label for="_15">15</label>
+        <input id="_16" type="radio" name="option" />
+        <label for="_16">16</label>
+        <input id="_17" type="radio" name="option" />
+        <label for="_17">17</label>
+        <br />
+        <input type="number" />
+        <input type="submit" value="BET" />
+        <span class="result"></span>
+      </form>
+      <button class="unbet">UNBET</button>
     </div>
-    <script>
-      function shuffle() {
-        return new Promise((resolve, reject) => {
-          const interval = setInterval(() => {
-            [...$(".shuffle span")].forEach(item => {
-              item.innerHTML = Math.floor(Math.random() * 6) + 1;
-            });
-          }, 100);
-
-          setTimeout(() => {
-            clearInterval(interval);
-            const res = [...$(".shuffle span")].map(item => parseInt(item.innerHTML)).reduce((a, b) => a + b);
-            resolve(res)
-          }, 4000);
-        });
-      }
-      shuffle().then(res => {
-        console.log(res);
-      })
-    </script>
     <script src="../public/socket.js"></script>
   </body>
 </html>

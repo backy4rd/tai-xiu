@@ -1,4 +1,4 @@
-require('dotenv').config();
+require("dotenv").config();
 const express = require("express");
 const app = express();
 const server = app.listen(process.env.PORT, (err, res) => {
@@ -11,7 +11,7 @@ const Datastore = require("nedb");
 const urlDecode = require("urldecode");
 
 const gameFunction = require("./gameFunction");
-const tool = require('./tool');
+const tool = require("./tool");
 
 const authenticationRouter = require("./router/authentication.router");
 const viewsRouter = require("./router/views.router");
@@ -30,46 +30,45 @@ let betUsers = [];
 app.use("/authentication", authenticationRouter);
 app.use("/", viewsRouter);
 
-setInterval(async () => { 
+setInterval(async () => {
   for (let i = 15; i >= 0; i--) {
     await tool.waitASecond(() => {
       console.log(i);
-      io.emit('countDown', i);
-    })
+      io.emit("countDown", i);
+    });
   }
 
   const _3dice = gameFunction.roll();
   const point = _3dice[0] + _3dice[1] + _3dice[2];
   await tool.waitASecond(() => {
     io.emit("roll", _3dice);
-  })
+  });
 
   db.loadDatabase();
-  betUsers.forEach(({ socketId, _id, betInfo: { option, bet } }) => {
-    console.log(Date.now());
-    db.find({ _id }, (err, [{ coin }]) => {
+  betUsers.forEach(({ socketId, username, betInfo: { option, bet } }) => {
+    db.find({ username }, (err, [{ coin }]) => {
       if (err) throw err;
       if (gameFunction.isWin(option, point)) {
-        coin += bet * gameFunction.xBase(option);
-        io.to(socketId).emit('result', {
-          status: 'you win',
-          coin: `+${bet * gameFunction.xBase(option)} coin`
+        const betxbase = bet * gameFunction.xBase(option);
+        coin += betxbase;
+        io.to(socketId).emit("result", {
+          status: "you win",
+          gain: `+${betxbase} coin`
         });
       } else {
         coin -= bet;
-        io.to(socketId).emit('result', {
-          status: 'you lose',
-          coin: `-${bet} coin`
+        io.to(socketId).emit("result", {
+          status: "you lose",
+          gain: `-${bet} coin`
         });
       }
       if (coin === 0) coin = 2;
-      io.to(socketId).emit('currentCoin', coin);
-      db.update({ _id }, { $set: { coin } }, err => {
+      io.to(socketId).emit("currentCoin", coin);
+      db.update({ username }, { $set: { coin } }, err => {
         if (err) throw err;
       });
     });
   });
-
   betUsers = [];
 }, 20 * 1000);
 
@@ -81,15 +80,18 @@ io.on("connection", socket => {
   const socketId = socket.id;
   console.log(socketId, _id);
 
+  //show old status to user just connect
+  io.emit("bet users", betUsers);
+
   //show username and coin to client
   db.loadDatabase();
-  db.find({ _id }, (err, [ userInfo ]) => {
+  db.find({ _id }, (err, [userInfo]) => {
     if (err) throw err;
     if (!userInfo) return;
     const { username, coin } = userInfo;
-    socket.emit('yourInfo', { username, coin });
+    socket.emit("yourInfo", { username, coin });
   });
-  
+
   //handle bet
   socket.on("bet", betInfo => {
     const { option, bet } = betInfo;
@@ -100,22 +102,36 @@ io.on("connection", socket => {
       return;
     }
     db.loadDatabase();
-    db.find({ _id }, (err, [ userInfo ]) => {
+    db.find({ _id }, (err, [userInfo]) => {
       if (err) throw err;
       if (!userInfo) return;
-      if (bet > userInfo.coin) {
+      const { username, coin } = userInfo;
+      if (bet > coin) {
         socket.emit("err", "not enough monney");
         return;
       }
       //handle change bet
       for (let i = 0; i < betUsers.length; i++) {
-        if (betUsers[i]._id === _id) {
+        if (betUsers[i].username === username) {
+          //delete bet
+          if (bet === 0) {
+            betUsers = betUsers.filter(
+              betUser => betUser.username !== username
+            );
+            console.log(betUsers);
+            io.emit("bet users", betUsers);
+            return;
+          }
           betUsers[i].betInfo = betInfo;
+          io.emit("bet users", betUsers);
           console.log(betUsers);
           return;
         }
       }
-      betUsers.push({ socketId, _id, betInfo });
+      if (bet !== 0) {
+        betUsers.push({ socketId, username, betInfo });
+        io.emit("bet users", betUsers);
+      }
       console.log(betUsers);
     });
   });
