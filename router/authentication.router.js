@@ -1,35 +1,38 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
 
-const Datastore = require("nedb");
-const sha256 = require("sha256");
+const Datastore = require('nedb');
+const bcrypt = require('bcrypt');
 
-const validateMiddleware = require("../middleware/validate.middleware");
+const validateMiddleware = require('../middleware/validate.middleware');
 
 router.post(
-  "/register",
+  '/register',
   validateMiddleware.validateRegister,
   //add new user to database
   async (request, response) => {
-    const db = new Datastore("./database/account-storage");
+    const db = new Datastore('./database/account-storage');
     db.loadDatabase();
     const { username, password } = request.body;
-    const hashPassword = sha256(password);
+    const hashPassword = bcrypt.hashSync(
+      password,
+      parseInt(process.env.SALT_ROUNDS)
+    );
     const { _id } = await db.insert({ username, hashPassword, coin: 20 });
-    response.cookie("token", _id, {
+    response.cookie('token', _id, {
       maxAge: 3 * 3600 * 1000,
       signed: true
     });
-    response.redirect("/");
+    response.redirect('/');
   }
 );
 
-router.post("/login", validateMiddleware.validateLogin, (request, response) => {
-  response.cookie("token", request.id, {
+router.post('/login', validateMiddleware.validateLogin, (request, response) => {
+  response.cookie('token', request._id, {
     maxAge: 3 * 3600 * 1000,
     signed: true
   });
-  response.redirect("/");
+  response.redirect('/');
 });
 
 module.exports = router;
