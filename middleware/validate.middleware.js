@@ -1,9 +1,9 @@
 const Datastore = require("nedb");
 const sha256 = require("sha256");
 
-module.exports.validateRegister = (request, response, next) => {
-  const db = new Datastore("./database/account-storage");
-  db.loadDatabase();
+const db = new Datastore("./database/account-storage");
+
+module.exports.validateRegister = async (request, response, next) => {
   const { username, password, confirmPassword } = request.body;
   let error = [];
   if (password !== confirmPassword) {
@@ -23,33 +23,29 @@ module.exports.validateRegister = (request, response, next) => {
   ) {
     error.push(
       "username just contain alpabelt, number, dot(.) and underline(_)"
-    );
+      );
+    }
+  db.loadDatabase();
+  const [result] = await db.find({ username })
+  if (result) {
+    error.push("username already exist");
   }
-  db.find({ username }, (err, result) => {
-    if (err) throw err;
-    if (result.length !== 0) {
-      error.push("username already exist");
-    }
-    if (error.length !== 0) {
-      response.send({ error });
-      return;
-    }
-    next();
-  });
+  if (error.length !== 0) {
+    response.send({ error });
+    return;
+  }
+  next();
 };
 
-module.exports.validateLogin = (request, response, next) => {
-  const db = new Datastore("./database/account-storage");
+module.exports.validateLogin = async (request, response, next) => {
   db.loadDatabase();
   const { username, password } = request.body;
   const hashPassword = sha256(password);
-  db.find({ username, hashPassword }, (err, result) => {
-    if (err) throw err;
-    if (result.length === 0) {
-      response.send({ error: "invalid account" });
-      return;
-    }
-    request.id = result[0]._id;
-    next();
-  });
+  const [result] = await db.find({ username, hashPassword });
+  if (!result) {
+    response.send({ error: "invalid account" });
+    return;
+  }
+  request.id = result[0]._id;
+  next();
 };
