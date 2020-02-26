@@ -1,17 +1,18 @@
 const express = require('express');
 const router = express.Router();
 
-const Datastore = require('nedb');
+const Datastore = require('../nedb');
 const bcrypt = require('bcrypt');
 
 const validateMiddleware = require('../middleware/validate.middleware');
+
+const db = new Datastore('./database/account-storage');
 
 router.post(
   '/register',
   validateMiddleware.validateRegister,
   //add new user to database
   async (request, response) => {
-    const db = new Datastore('./database/account-storage');
     db.loadDatabase();
     const { username, password } = request.body;
     const hashPassword = bcrypt.hashSync(

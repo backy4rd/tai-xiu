@@ -1,45 +1,41 @@
-module.exports.roll = () => {
-  return [
-    Math.floor(Math.random() * 6) + 1,
-    Math.floor(Math.random() * 6) + 1,
-    Math.floor(Math.random() * 6) + 1
-  ];
-};
+func = {
+  xBase(option) {
+    switch (option) {
+      case 'tai':
+      case 'xiu':
+        return 1;
+      case '4':
+      case '17':
+        return 50;
+      case '5':
+      case '16':
+        return 18;
+      case '6':
+      case '15':
+        return 14;
+      case '7':
+      case '14':
+        return 12;
+      case '8':
+      case '13':
+        return 8;
+      case '9':
+      case '10':
+      case '11':
+      case '12':
+        return 6;
+    }
+  },
 
-module.exports.xBase = option => {
-  switch (option) {
-    case 'tai':
-    case 'xiu':
-      return 1;
-    case '4':
-    case '17':
-      return 50;
-    case '5':
-    case '16':
-      return 18;
-    case '6':
-    case '15':
-      return 14;
-    case '7':
-    case '14':
-      return 12;
-    case '8':
-    case '13':
-      return 8;
-    case '9':
-    case '10':
-    case '11':
-    case '12':
-      return 6;
+  isWin(option, point) {
+    if (option === 'xiu' && point >= 4 && point <= 10) return true;
+    if (option === 'tai' && point >= 11 && point <= 17) return true;
+    if (parseInt(option) === point) return true;
+    return false;
   }
-};
+}
 
-module.exports.isWin = (option, point) => {
-  if (option === 'xiu' && point >= 4 && point <= 10) return true;
-  if (option === 'tai' && point >= 11 && point <= 17) return true;
-  if (parseInt(option) === point) return true;
-  return false;
-};
+
 
 module.exports.isBetInfoValid = (option, bet, userCoin, socket) => {
   //is option valid
@@ -86,8 +82,8 @@ module.exports.processBet = (point, betUsers, onlineUsers, io) => {
       onlineUser => onlineUser.username == username
     );
 
-    if (this.isWin(option, point)) {
-      const betxbase = bet * this.xBase(option);
+    if (func.isWin(option, point)) {
+      const betxbase = bet * func.xBase(option);
       userInfo.coin += betxbase;
       io.to(socketId).emit('result', {
         status: 'you win',
@@ -100,8 +96,21 @@ module.exports.processBet = (point, betUsers, onlineUsers, io) => {
         gain: `-${bet} coin`
       });
     }
+
     if (userInfo.coin === 0) userInfo.coin = 2;
 
     io.to(socketId).emit('currentCoin', userInfo.coin);
   });
+
+  // emptyfy bets
+  betUsers.length = 0;
 };
+
+module.exports.roll = () => {
+  return [
+    Math.floor(Math.random() * 6) + 1,
+    Math.floor(Math.random() * 6) + 1,
+    Math.floor(Math.random() * 6) + 1
+  ];
+};
+

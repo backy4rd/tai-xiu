@@ -1,13 +1,12 @@
 require('dotenv').config();
 const express = require('express');
+const http = require('http');
 const app = express();
-const server = app.listen(process.env.PORT, (err, res) => {
-  if (err) throw err;
-  console.log('server listening port: ' + process.env.PORT);
-});
+
+const server = http.createServer(app);
 
 const io = require('socket.io')(server);
-const Datastore = require('nedb');
+const Datastore = require('./nedb');
 const urlDecode = require('urldecode');
 
 const gameFunction = require('./gameFunction');
@@ -31,17 +30,19 @@ let betUsers = [];
 app.use('/authentication', authenticationRouter);
 app.use('/', viewsRouter);
 
+// process game bets and create new game after 20s
 setInterval(async () => {
+  // countdown 15s
   for (let i = 15; i >= 0; i--) {
     await tool.waitASecond(() => io.emit('countDown', i));
   }
 
+  // roll
   const _3dice = gameFunction.roll();
   const point = _3dice[0] + _3dice[1] + _3dice[2];
   await tool.waitASecond(() => io.emit('roll', _3dice));
 
   gameFunction.processBet(point, betUsers, onlineUsers, io);
-  betUsers = [];
 }, 20 * 1000);
 
 io.on('connection', async socket => {
@@ -68,6 +69,7 @@ io.on('connection', async socket => {
     const { option, bet } = betInfo;
     const { username, coin } = userInfo;
     if (!gameFunction.isBetInfoValid(option, bet, coin, socket)) return;
+
     //handle change bet
     for (let i = 0; i < betUsers.length; i++) {
       if (betUsers[i].username === username) {
@@ -77,15 +79,19 @@ io.on('connection', async socket => {
           io.emit('bet users', betUsers);
           return;
         }
+
         betUsers[i].betInfo = betInfo;
         io.emit('bet users', betUsers);
         return;
       }
     }
+
     betUsers.push({ socketId, username, betInfo });
+
     io.emit('bet users', betUsers);
   });
 
+  // save data to db when user exit
   socket.on('disconnect', () => {
     const disconnectUser = onlineUsers.find(
       onlineUser => onlineUser._id === _id
@@ -99,3 +105,9 @@ io.on('connection', async socket => {
     onlineUsers = onlineUsers.filter(onlineUser => onlineUser.username !== disconnectUser.username);
   });
 });
+
+server.listen(process.env.PORT, 'localhost', err => {
+  if (err) throw err;
+  console.log('server listening port: ' + process.env.PORT);
+});
+

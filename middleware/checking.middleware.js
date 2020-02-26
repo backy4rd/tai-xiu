@@ -1,4 +1,4 @@
-const Datastore = require('nedb');
+const Datastore = require('../nedb');
 
 const db = new Datastore('./database/account-storage');
 

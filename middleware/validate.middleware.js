@@ -1,4 +1,4 @@
-const Datastore = require('nedb');
+const Datastore = require('../nedb');
 const bcrypt = require('bcrypt');
 
 const db = new Datastore('./database/account-storage');
@@ -27,6 +27,7 @@ module.exports.validateRegister = async (request, response, next) => {
   }
   db.loadDatabase();
   const [userInfo] = await db.find({ username });
+  console.log(userInfo);
   if (userInfo) {
     error.push('username already exist');
   }
